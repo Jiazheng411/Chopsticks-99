@@ -1,0 +1,12 @@
+//multiplier
+
+module mul (
+    input a[16],  // a
+    input b[16],  // b
+    output out[16]
+  ) {
+
+  always {
+    out = a * b;
+  }
+}

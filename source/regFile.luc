@@ -1,0 +1,85 @@
+global Reg {
+  const PLAYER1_NUM1   = 4d0;
+  const PLAYER1_NUM2   = 4d1;  
+  const PLAYER2_NUM1   = 4d2;  
+  const PLAYER2_NUM2   = 4d3;  
+  const TEMP_RESULT    = 4d4;
+  const TEMP_COMPARE_RESULT = 4d5;
+}
+
+
+module regFile (
+    input clk,  // clock
+    input rst,  // reset
+    input we,
+    input wa[4],
+    input writing_data[16],
+    input ra_address[4],
+    input rb_address[4],
+    
+    output a[16],
+    output b[16],
+    
+    output ioseg_val[8],
+    output iosel_val[4],
+    output temp_result_display[16],
+    output reg1[16]
+  )
+{
+  .clk(clk){
+    .rst(rst){
+      // declare seven_seg display
+      multi_seven_seg seg;
+      
+      dff p1_number1[16](#INIT(b01));
+      dff p1_number2[16](#INIT(b01));
+      dff p2_number1[16](#INIT(b01));
+      dff p2_number2[16](#INIT(b01));
+      dff temp_result[16];
+      dff temp_compare_result;
+    }
+  }
+
+
+  always {
+  
+  seg.values = {p1_number1.q[3:0], p1_number2.q[3:0], p2_number1.q[3:0], p2_number2.q[3:0]};
+  iosel_val = ~seg.sel;
+  ioseg_val = ~seg.seg;
+    
+  if(we){
+    case(wa){
+        Reg.PLAYER1_NUM1: p1_number1.d = writing_data;
+        Reg.PLAYER1_NUM2: p1_number2.d = writing_data;
+        Reg.PLAYER2_NUM1: p2_number1.d = writing_data;
+        Reg.PLAYER2_NUM2: p2_number2.d = writing_data;
+        Reg.TEMP_RESULT: temp_result.d = writing_data;
+        Reg.TEMP_COMPARE_RESULT: temp_compare_result.d = writing_data[0];
+      }
+    
+      
+    }
+  case(ra_address){
+      Reg.PLAYER1_NUM1: a = p1_number1.q;
+      Reg.PLAYER1_NUM2: a = p1_number2.q;
+      Reg.PLAYER2_NUM1: a = p2_number1.q;
+      Reg.PLAYER2_NUM2: a = p2_number2.q;
+      Reg.TEMP_RESULT: a = temp_result.q;
+      Reg.TEMP_COMPARE_RESULT: a = temp_compare_result.q;
+      default: a = 0;
+    }
+    
+    case(rb_address){
+      Reg.PLAYER1_NUM1: b = p1_number1.q;
+      Reg.PLAYER1_NUM2: b = p1_number2.q;
+      Reg.PLAYER2_NUM1: b = p2_number1.q;
+      Reg.PLAYER2_NUM2: b = p2_number2.q;
+      Reg.TEMP_RESULT: b = temp_result.q;
+      Reg.TEMP_COMPARE_RESULT: b = temp_compare_result.q;
+      default: b = 0;
+    }
+    
+    temp_result_display = temp_result.q;
+    reg1 = p1_number1.q;
+  }
+}
