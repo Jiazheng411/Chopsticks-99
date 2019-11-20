@@ -1,0 +1,21 @@
+module multi_seg_separate_io (    
+    input values [4][4], // values to show
+    output out[4][7]
+  ) {
+  seven_seg seg1;
+  seven_seg seg2;
+  seven_seg seg3;
+  seven_seg seg4;
+
+  always {
+    seg1.char = values[0];
+    seg2.char = values[1];
+    seg3.char = values[2];
+    seg4.char = values[3];
+    
+    out[0] = seg1.segs;
+    out[1] = seg2.segs;
+    out[2] = seg3.segs;
+    out[3] = seg4.segs;
+  }
+}

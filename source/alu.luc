@@ -19,8 +19,10 @@
 
 global Alufn{
   const ADD = 6b000000;
+  const MINUS = 6b000001;
   const REMAINDER = 6b000100;
   const CMPEQ = 6b110011;
+  const CMPLT = 6b110101;
 }
 
 module alu (
@@ -39,9 +41,6 @@ module alu (
   cmp cmp;                 //comparator
   boole boole;             //boolean
   shifter shifter;         //shifter
-  mul mul;                 //multiplier
-  dividor dividor;         //dividor
-  remainder remainder;     //remainder
 
   always {
   
@@ -71,20 +70,6 @@ module alu (
     shifter.b = b;
     shifter.alufn = alufn[1:0];
     
-    
-    //connect inputs to multiplier inputs
-    mul.a = a;
-    mul.b = b;
-    
-    //connect inputs to dividor inputs
-    dividor.a = a;
-    dividor.b = b;
-    
-    //connect inputs to remainder inputs
-    remainder.a = a;
-    remainder.b = b;
-    remainder.quotient = dividor.out; 
-    
     //choose output out value base on alufn
     case(alufn[5:4])
     {
@@ -95,14 +80,6 @@ module alu (
         3b000 : out = addSub.out; z = addSub.z; v = addSub.v; n = addSub.n;
         3b001 : out = addSub.out; z = addSub.z; v = addSub.v; n = addSub.n;
           
-        //multiplier
-        3b010: out = mul.out;
-          
-        //dividor
-        3b011: out = dividor.out;
-        
-        //remainder
-        3b100: out = remainder.out;
           
         //defalut: 0
         default: out = 0;

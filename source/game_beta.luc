@@ -9,12 +9,16 @@ module game_beta (
     input button_6_pressed,
     input button_7_pressed,
     input button_8_pressed,
+    input who_go_first,
     
     output ioseg_val[8],
     output iosel_val[4],
-    output game_state[2],
     output temp_result_display[16],
-    output reg1[16]
+    output reg1[16],
+    output who_is_playing[2],
+    output who_wins[2],
+    output seven_seg_separate[4][7]
+    
   ) {
   alu game_alu;
   sig input_alu_b[16];
@@ -29,9 +33,12 @@ module game_beta (
     //
     iosel_val = game_regfile.iosel_val;
     ioseg_val = game_regfile.ioseg_val;
+    seven_seg_separate = game_regfile.seven_seg_separate;
     
     // 
-    game_state = game_fsm.game_state;
+    who_is_playing = game_fsm.which_player;
+    who_wins = game_fsm.who_win;
+    
   
     //pass button press signal to CU unit
     game_fsm.button1_pressed = button_1_pressed;
@@ -68,6 +75,9 @@ module game_beta (
     
     // 
     game_fsm.z_from_alu = game_alu.z;
+    
+    //
+    game_fsm.who_go_first = who_go_first;
     
     //
     temp_result_display = game_regfile.temp_result_display;

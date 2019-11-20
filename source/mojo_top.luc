@@ -19,6 +19,8 @@ module mojo_top (
   ) {
   
   sig rst;                  // reset signal
+  sig who_go_first;
+  sig seven_seg_separate[4][7];
   
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
@@ -92,10 +94,24 @@ module mojo_top (
     io_seg = gameUnit.ioseg_val;
     io_sel = gameUnit.iosel_val;
     
-    io_led[0][1:0] = gameUnit.game_state;
+    seven_seg_separate = ~gameUnit.seven_seg_separate;
+    io_led[2][7:1] = seven_seg_separate[0];
+    io_led[1][7:1] = seven_seg_separate[1];
+    led[7:1] = seven_seg_separate[2];
+    io_led[0][7:4] = seven_seg_separate[3][6:3];
+    io_led[2][0] = seven_seg_separate[3][2];
+    io_led[1][0] = seven_seg_separate[3][1];
+    led[0] = seven_seg_separate[3][0];
     
-    io_led[2] = gameUnit.reg1[7:0];
-    io_led[1] = gameUnit.temp_result_display[7:0];
+    
+    io_led[0][1:0] = gameUnit.who_is_playing;
+    io_led[0][3:2] = gameUnit.who_wins;
+    
+    //io_led[2] = gameUnit.reg1[7:0];
+    //io_led[1] = gameUnit.temp_result_display[7:0];
+    
+    who_go_first = io_dip[2][0];
+    gameUnit.who_go_first = who_go_first;
     
   }
 }
