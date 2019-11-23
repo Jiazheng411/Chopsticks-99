@@ -39,8 +39,12 @@ module game_beta (
     seven_seg_separate = game_regfile.seven_seg_separate;
     
     // 
-    who_is_playing = game_fsm.which_player;
-    who_wins = game_fsm.who_win;
+    //who_is_playing = game_fsm.which_player;
+    //who_wins = game_fsm.who_win;
+    
+    //
+    who_is_playing = game_regfile.player;
+    who_wins = game_regfile.winner;
     
   
     //pass button press signal to CU unit

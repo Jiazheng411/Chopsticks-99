@@ -8,6 +8,8 @@ global Reg {
   const ADD_FROM_VALUE = 4d6;
   const ADD_TO_VALUE = 4d7;
   const ADD_TO_WHICH_NUMBER = 4d8;
+  const CURRENT_PLAYER = 4d9;
+  const CURRENT_WINNER = 4d10;
 }
 
 
@@ -27,6 +29,9 @@ module regFile (
     output ioseg_val[8],   // 7-seg on mojo
     output iosel_val[4],   
     output seven_seg_separate[4][7],  // 4 separate value of 7-seg display
+    //current players and winner
+    output player[2],
+    output winner[2],
     // for debug
     output temp_result_display[16],   
     output reg1[16]
@@ -55,6 +60,8 @@ module regFile (
       dff add_from_value[16](#INIT(0));
       dff add_to_value[16](#INIT(0));
       dff add_to_which_number[16](#INIT(0));
+      dff current_player[2](#INIT(0));
+      dff current_winner[2](#INIT(0));
     }
   }
 
@@ -69,6 +76,9 @@ module regFile (
   seg_sep.values = {p1_number1.q[3:0], p1_number2.q[3:0], p2_number1.q[3:0], p2_number2.q[3:0]};
   seven_seg_separate = seg_sep.out;
     
+  player = current_player.q;
+  winner = current_winner.q;
+    
 
   // write to regfile according to wrting data and writing address if we is 1
   if(we){
@@ -82,6 +92,8 @@ module regFile (
         Reg.ADD_FROM_VALUE: add_from_value.d = writing_data;
         Reg.ADD_TO_VALUE: add_to_value.d = writing_data;
         Reg.ADD_TO_WHICH_NUMBER: add_to_which_number.d = writing_data;
+        Reg.CURRENT_PLAYER: current_player.d = writing_data[1:0];
+        Reg.CURRENT_WINNER: current_winner.d = writing_data[1:0];
       }
     
       
