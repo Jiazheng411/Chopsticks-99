@@ -64,14 +64,14 @@ module mojo_top (
     io_sel = 4hf;           // select no digits
     
     
-    btn_cond_1.in=io_button[0]; //to reduce the bouncing effects of your button 
-    btn_cond_2.in=io_button[1];
-    btn_cond_3.in=io_button[2];
-    btn_cond_4.in=io_button[3];
-    btn_cond_5.in=io_button[4];
-    btn_cond_6.in=io_dip[0][0];
-    btn_cond_7.in=io_dip[0][1];
-    btn_cond_8.in=io_dip[0][2];
+    btn_cond_1.in=io_dip[1][4]; //to reduce the bouncing effects of your button 
+    btn_cond_2.in=io_dip[1][5];
+    btn_cond_3.in=io_dip[1][6];
+    btn_cond_4.in=io_dip[1][7];
+    btn_cond_5.in=io_dip[1][0];
+    btn_cond_6.in=io_dip[1][1];
+    btn_cond_7.in=io_dip[1][2];
+    btn_cond_8.in=io_dip[1][3];
     edge_dt_btn_1.in=btn_cond_1.out; //get the edge of button press
     edge_dt_btn_2.in=btn_cond_2.out;
     edge_dt_btn_3.in=btn_cond_3.out;
