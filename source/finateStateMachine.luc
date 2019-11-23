@@ -104,7 +104,6 @@ module finateStateMachine (
       P2_DISPLAY_RESULT_BRANCH,
       P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1,
       P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2,
-      
         // check whether p2 wins
       P2_CHECK_FIRST,
       P2_CHECK_WIN_FIRST_STAGE,
@@ -342,7 +341,7 @@ module finateStateMachine (
           game_fsm.d = game_fsm.P2_PLAY;
 
           
-        game_fsm.P2_PLAY:
+         game_fsm.P2_PLAY:
           who_is_playing.d = PersonPlyer.P2PLAYING;
           if(button5_pressed | button6_pressed | button7_pressed | button8_pressed){
             alufn = Alufn.ADD;
@@ -365,10 +364,28 @@ module finateStateMachine (
               regfile_ra_address = Reg.PLAYER1_NUM2;
               game_fsm.d = game_fsm.P2_STORE_TO_SECOND_NUMBER_VALUE;
             }                         
+            //game_fsm.d = game_fsm.P2_SCORE_ADDING;
           }
           else{
             game_fsm.d = game_fsm.P2_PLAY;
           }
+        game_fsm.P2_STORE_TO_FIRST_NUMBER_VALUE:
+          alufn = Alufn.ADD;
+          regfile_ra_address = Reg.PLAYER2_NUM1;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.ADD_TO_VALUE;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P2_STORE_ADD_TO_NUMBER1;
+        
+        game_fsm.P2_STORE_ADD_TO_NUMBER1:
+          alufn = Alufn.ADD;
+          asel = Asel.CONST_ONE;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.ADD_TO_WHICH_NUMBER;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P2_SCORE_ADDING;
+        
+          
         game_fsm.P2_STORE_TO_FIRST_NUMBER_VALUE:
           alufn = Alufn.ADD;
           regfile_ra_address = Reg.PLAYER2_NUM1;
@@ -405,6 +422,8 @@ module finateStateMachine (
           
         game_fsm.P2_SCORE_ADDING:
           alufn = Alufn.ADD; // adding;
+          //regfile_ra_address = add_from.q;
+          //regfile_rb_address = add_to.q;
           regfile_ra_address = Reg.ADD_FROM_VALUE;
           regfile_rb_address = Reg.ADD_TO_VALUE;
           regfile_writing_address = Reg.TEMP_RESULT;  //temp result register
@@ -435,6 +454,18 @@ module finateStateMachine (
           alufn = Alufn.MINUS;
           regfile_we = 1;
           regfile_ra_address = Reg.TEMP_RESULT;
+          regfile_writing_address = Reg.TEMP_RESULT;
+          game_fsm.d = game_fsm.P2_DISPLAY_RESULT_CMP;
+          
+
+          
+        game_fsm.P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2:
+          regfile_ra_address = Reg.TEMP_RESULT;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.PLAYER2_NUM2;
+          regfile_we = 1;
+          regfile_ra_address = Reg.TEMP_RESULT;
+          // regfile_writing_address = add_to.q;
           regfile_writing_address = Reg.TEMP_RESULT;
           game_fsm.d = game_fsm.P2_DISPLAY_RESULT_CMP;
           
@@ -469,7 +500,7 @@ module finateStateMachine (
           regfile_writing_address = Reg.PLAYER2_NUM2;
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_CHECK_FIRST;
-          
+         
         game_fsm.P2_CHECK_FIRST:
           bsel = Bsel.CONST_NINE;
           alufn = Alufn.CMPEQ; //COMEQ
