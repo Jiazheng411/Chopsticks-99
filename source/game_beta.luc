@@ -1,6 +1,7 @@
 module game_beta (
     input clk,  // clock
     input rst,  // reset
+    // 8 buttun input
     input button_1_pressed,
     input button_2_pressed,
     input button_3_pressed,
@@ -13,11 +14,12 @@ module game_beta (
     
     output ioseg_val[8],
     output iosel_val[4],
-    output temp_result_display[16],
-    output reg1[16],
     output who_is_playing[2],
     output who_wins[2],
     output seven_seg_separate[4][7]
+    // for debug
+    //output temp_result_display[16],
+    //output reg1[16],
     
   ) {
   alu game_alu;
@@ -79,9 +81,9 @@ module game_beta (
     //
     game_fsm.who_go_first = who_go_first;
     
-    //
-    temp_result_display = game_regfile.temp_result_display;
-    reg1 = game_regfile.reg1;
+    // for debug
+    //temp_result_display = game_regfile.temp_result_display;
+    //reg1 = game_regfile.reg1;
     
     
   }

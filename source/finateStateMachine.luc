@@ -1,3 +1,4 @@
+// fsm and control logic
 global Bsel{
   const CONST_ZERO = 2d0;
   const CONST_NINE = 2d1;
@@ -24,7 +25,7 @@ global PersonWin{
 module finateStateMachine (
     input clk,  // clock
     input rst,  // reset
-    input button1_pressed,
+    input button1_pressed,  // 8 buttun pressed signals
     input button2_pressed,
     input button3_pressed,
     input button4_pressed,
@@ -32,8 +33,8 @@ module finateStateMachine (
     input button6_pressed,
     input button7_pressed,
     input button8_pressed,
-    input who_go_first,
-    input z_from_alu,
+    input who_go_first,     // value go goes first
+    input z_from_alu,       // z from alu
     
     output alufn[6],
     output bsel[2],
@@ -41,8 +42,8 @@ module finateStateMachine (
     output regfile_rb_address[4],
     output regfile_we,
     output regfile_writing_address[4],
-    output which_player[2], 
-    output who_win[2]
+    output which_player[2],  // which player is playing 
+    output who_win[2]        // who wins the game
     
   ) {
   .clk(clk){
@@ -54,26 +55,33 @@ module finateStateMachine (
     }
     fsm game_fsm={
       START,
+      // P1's turn
       P1_PLAY, 
       P1_SCORE_ADDING,
+        // remainder 10
       P1_CHECK_SCORE_LESS_THAN_10,
       P1_CHECK_SCORE_BRANCH,
       P1_DISPLAY_RESULT,
       P1_SCORE_MINUS_10,
+        // check whether p1 wins
       P1_CHECK_FIRST,
       P1_CHECK_WIN_FIRST_STAGE,
       P1_CHECK_SECOND,
       P1_CHECK_WIN_SECOND_STAGE,
+      // P2's turn
       P2_PLAY, 
       P2_SCORE_ADDING,
+        // remainder 10
       P2_CHECK_SCORE_LESS_THAN_10,
       P2_CHECK_SCORE_BRANCH,
       P2_DISPLAY_RESULT,
       P2_SCORE_MINUS_10,
+        // check whether p2 wins
       P2_CHECK_FIRST,
       P2_CHECK_WIN_FIRST_STAGE,
       P2_CHECK_SECOND,
       P2_CHECK_WIN_SECOND_STAGE,
+      // end
       GAME_END
       };
   }

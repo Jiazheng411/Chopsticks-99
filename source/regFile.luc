@@ -11,32 +11,38 @@ global Reg {
 module regFile (
     input clk,  // clock
     input rst,  // reset
-    input we,
-    input wa[4],
-    input writing_data[16],
-    input ra_address[4],
-    input rb_address[4],
+    input we,   // wrtite enable for regfile
+    input wa[4],  //writing address
+    input writing_data[16],  //writing_data
+    input ra_address[4],     // reading address 1
+    input rb_address[4],     // reading address 2
     
-    output a[16],
+    output a[16],     
     output b[16],
     
-    output ioseg_val[8],
-    output iosel_val[4],
-    output temp_result_display[16],
-    output reg1[16],
-    output seven_seg_separate[4][7]
+    // for display
+    output ioseg_val[8],   // 7-seg on mojo
+    output iosel_val[4],   
+    output seven_seg_separate[4][7]  // 4 separate value of 7-seg display
+    // for debug
+    // output temp_result_display[16],   
+    // output reg1[16]
   )
   
 {
+  
+  // declare multi_seg_separate_io for 4 separate 7-seg
   multi_seg_separate_io seg_sep;
   
   
   .clk(clk){
     .rst(rst){
+    
       // declare seven_seg display
       multi_seven_seg seg;
       
-      
+      // registers in regfiles 
+      // four numbers start with value 1
       dff p1_number1[16](#INIT(b01));
       dff p1_number2[16](#INIT(b01));
       dff p2_number1[16](#INIT(b01));
@@ -49,13 +55,16 @@ module regFile (
 
   always {
   
+  // 7-seg displays on mojo
   seg.values = {p1_number1.q[3:0], p1_number2.q[3:0], p2_number1.q[3:0], p2_number2.q[3:0]};
+  iosel_val = ~seg.sel;
+  ioseg_val = ~seg.seg;
+  // 7-seg displays of game 
   seg_sep.values = {p1_number1.q[3:0], p1_number2.q[3:0], p2_number1.q[3:0], p2_number2.q[3:0]};
   seven_seg_separate = seg_sep.out;
     
-  iosel_val = ~seg.sel;
-  ioseg_val = ~seg.seg;
-    
+
+  // write to regfile according to wrting data and writing address if we is 1
   if(we){
     case(wa){
         Reg.PLAYER1_NUM1: p1_number1.d = writing_data;
@@ -68,6 +77,7 @@ module regFile (
     
       
     }
+  // get value a according to ra_address
   case(ra_address){
       Reg.PLAYER1_NUM1: a = p1_number1.q;
       Reg.PLAYER1_NUM2: a = p1_number2.q;
@@ -78,7 +88,8 @@ module regFile (
       default: a = 0;
     }
     
-    case(rb_address){
+    // get value b according to rb_address
+  case(rb_address){
       Reg.PLAYER1_NUM1: b = p1_number1.q;
       Reg.PLAYER1_NUM2: b = p1_number2.q;
       Reg.PLAYER2_NUM1: b = p2_number1.q;
@@ -88,7 +99,8 @@ module regFile (
       default: b = 0;
     }
     
-    temp_result_display = temp_result.q;
-    reg1 = p1_number1.q;
+    // for debug
+    //temp_result_display = temp_result.q;
+    //reg1 = p1_number1.q;
   }
 }
