@@ -112,6 +112,8 @@ module mojo_top (
     // for debug
     //io_led[2] = gameUnit.reg1[7:0];
     //io_led[1] = gameUnit.temp_result_display[7:0];
+    io_led[0][1:0] = gameUnit.who_is_playing;
+    io_led[0][3:2] = gameUnit.who_wins;
     
   }
 }

@@ -1,4 +1,10 @@
 // fsm and control logic
+global Asel{
+  const CONST_ONE = 2d1;
+  const CONST_TWO = 2d2;
+  const FROM_REGFILE = 2d3;
+}
+
 global Bsel{
   const CONST_ZERO = 2d0;
   const CONST_NINE = 2d1;
@@ -37,6 +43,7 @@ module finateStateMachine (
     input z_from_alu,       // z from alu
     
     output alufn[6],
+    output asel[2],
     output bsel[2],
     output regfile_ra_address[4],
     output regfile_rb_address[4],
@@ -56,18 +63,29 @@ module finateStateMachine (
     fsm game_fsm={
       START,
       // P1's turn
+      P1_STORE_PLAYER,
       P1_PLAY, 
+      P1_STORE_TO_FIRST_NUMBER_VALUE,
+      P1_STORE_ADD_TO_NUMBER1,
+      P1_STORE_TO_SECOND_NUMBER_VALUE,
+      P1_STORE_ADD_TO_NUMBER2,
+      P1_STORE_TO_WHICH_NUMBER,
       P1_SCORE_ADDING,
         // remainder 10
       P1_CHECK_SCORE_LESS_THAN_10,
       P1_CHECK_SCORE_BRANCH,
-      P1_DISPLAY_RESULT,
       P1_SCORE_MINUS_10,
+      P1_DISPLAY_RESULT_CMP,
+      P1_DISPLAY_RESULT_BRANCH,
+      P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1,
+      P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2,
+      
         // check whether p1 wins
       P1_CHECK_FIRST,
       P1_CHECK_WIN_FIRST_STAGE,
       P1_CHECK_SECOND,
       P1_CHECK_WIN_SECOND_STAGE,
+      P1_CHANGE_WINNER,
       // P2's turn
       P2_PLAY, 
       P2_SCORE_ADDING,
@@ -88,6 +106,7 @@ module finateStateMachine (
 
   always {
     alufn = Alufn.ADD;
+    asel = Asel.FROM_REGFILE;
     bsel = Bsel.FROM_REGFILE;
     regfile_we = 0;
     regfile_writing_address = Reg.TEMP_RESULT;
@@ -113,37 +132,74 @@ module finateStateMachine (
         game_fsm.P1_PLAY:
           who_is_playing.d = PersonPlyer.P1PLAYING;
           if(button1_pressed | button2_pressed | button3_pressed | button4_pressed){
+            alufn = Alufn.ADD;
+            bsel = Bsel.CONST_ZERO;
+            regfile_writing_address = Reg.ADD_FROM_VALUE;
+            regfile_we = 1;
             if(button1_pressed){
-              add_from.d = Reg.PLAYER2_NUM1;
-              add_to.d = Reg.PLAYER1_NUM1;
+              regfile_ra_address = Reg.PLAYER2_NUM1;
+              game_fsm.d = game_fsm.P1_STORE_TO_FIRST_NUMBER_VALUE;
             }
             else if (button2_pressed){
-              add_from.d = Reg.PLAYER2_NUM2;
-              add_to.d = Reg.PLAYER1_NUM1;
+              regfile_ra_address = Reg.PLAYER2_NUM2;
+              game_fsm.d = game_fsm.P1_STORE_TO_FIRST_NUMBER_VALUE;
             }
             else if (button3_pressed){
-              add_from.d = Reg.PLAYER2_NUM1;
-              add_to.d = Reg.PLAYER1_NUM2;
+              regfile_ra_address = Reg.PLAYER2_NUM1;
+              game_fsm.d = game_fsm.P1_STORE_TO_SECOND_NUMBER_VALUE;
             }
             else if (button4_pressed){
-              add_from.d = Reg.PLAYER2_NUM2;
-              add_to.d = Reg.PLAYER1_NUM2;
+              regfile_ra_address = Reg.PLAYER2_NUM2;
+              game_fsm.d = game_fsm.P1_STORE_TO_SECOND_NUMBER_VALUE;
             }                         
-            game_fsm.d = game_fsm.P1_SCORE_ADDING;
+            //game_fsm.d = game_fsm.P1_SCORE_ADDING;
           }
           else{
             game_fsm.d = game_fsm.P1_PLAY;
           }
           
+          
+        game_fsm.P1_STORE_TO_FIRST_NUMBER_VALUE:
+          alufn = Alufn.ADD;
+          regfile_ra_address = Reg.PLAYER1_NUM1;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.ADD_TO_VALUE;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P1_STORE_ADD_TO_NUMBER1;
+        
+        game_fsm.P1_STORE_ADD_TO_NUMBER1:
+          alufn = Alufn.ADD;
+          asel = Asel.CONST_ONE;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.ADD_TO_WHICH_NUMBER;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P1_SCORE_ADDING;
+        
+          
+        game_fsm.P1_STORE_TO_SECOND_NUMBER_VALUE:
+          alufn = Alufn.ADD;
+          regfile_ra_address = Reg.PLAYER1_NUM2;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.ADD_TO_VALUE;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P1_STORE_ADD_TO_NUMBER2;
+          
+       game_fsm.P1_STORE_ADD_TO_NUMBER2:
+          alufn = Alufn.ADD;
+          asel = Asel.CONST_TWO;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.ADD_TO_WHICH_NUMBER;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P1_SCORE_ADDING;
+          
+          
         game_fsm.P1_SCORE_ADDING:
           alufn = Alufn.ADD; // adding;
-          regfile_ra_address = add_from.q;
-          regfile_rb_address = add_to.q;
+          regfile_ra_address = Reg.ADD_FROM_VALUE;
+          regfile_rb_address = Reg.ADD_TO_VALUE;
           regfile_writing_address = Reg.TEMP_RESULT;  //temp result register
-          //regfile_writing_address = add_to.q;
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_CHECK_SCORE_LESS_THAN_10;
-          //game_fsm.d = game_fsm.P1_CHECK_FIRST;
           
         game_fsm.P1_CHECK_SCORE_LESS_THAN_10:
           alufn = Alufn.CMPLT;
@@ -158,27 +214,56 @@ module finateStateMachine (
           alufn = Alufn.ADD;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
           if(!z_from_alu){
-            game_fsm.d = game_fsm.P1_DISPLAY_RESULT;
+            game_fsm.d = game_fsm.P1_DISPLAY_RESULT_CMP;
           }
           else{
           game_fsm.d = game_fsm.P1_SCORE_MINUS_10;
           }
           
-        game_fsm.P1_DISPLAY_RESULT:
-          bsel = Bsel.CONST_ZERO;
-          alufn = Alufn.ADD;
-          regfile_we = 1;
-          regfile_writing_address = add_to.q;
-          regfile_ra_address = Reg.TEMP_RESULT;
-          game_fsm.d = game_fsm.P1_CHECK_FIRST;
+
           
         game_fsm.P1_SCORE_MINUS_10:
           bsel = Bsel.CONST_TEN;
           alufn = Alufn.MINUS;
           regfile_we = 1;
           regfile_ra_address = Reg.TEMP_RESULT;
-          regfile_writing_address = add_to.q;
+          regfile_writing_address = Reg.TEMP_RESULT;
+          game_fsm.d = game_fsm.P1_DISPLAY_RESULT_CMP;
+          
+        game_fsm.P1_DISPLAY_RESULT_CMP:
+          alufn = Alufn.CMPEQ;
+          asel = Asel.CONST_ONE;
+          regfile_rb_address = Reg.ADD_TO_WHICH_NUMBER;
+          regfile_writing_address = Reg.TEMP_COMPARE_RESULT;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P1_DISPLAY_RESULT_BRANCH;
+          
+        game_fsm.P1_DISPLAY_RESULT_BRANCH:
+          alufn = Alufn.ADD;
+          regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
+          bsel = Bsel.CONST_ZERO;
+          if(!z_from_alu){
+            game_fsm.d = game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1;
+          }
+          else{
+            game_fsm.d = game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2;
+          }
+          
+        game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1:
+          regfile_ra_address = Reg.TEMP_RESULT;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.PLAYER1_NUM1;
+          regfile_we = 1;
           game_fsm.d = game_fsm.P1_CHECK_FIRST;
+          
+        game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2:
+          regfile_ra_address = Reg.TEMP_RESULT;
+          bsel = Bsel.CONST_ZERO;
+          regfile_writing_address = Reg.PLAYER1_NUM2;
+          regfile_we = 1;
+          game_fsm.d = game_fsm.P1_CHECK_FIRST;
+         
+     
           
           
        game_fsm.P1_CHECK_FIRST:
