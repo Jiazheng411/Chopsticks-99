@@ -110,8 +110,8 @@ module mojo_top (
     who_go_first = io_dip[2][0];
     gameUnit.who_go_first = who_go_first;
     // for debug
-    //io_led[2] = gameUnit.reg1[7:0];
-    //io_led[1] = gameUnit.temp_result_display[7:0];
+    io_led[2] = gameUnit.reg1[7:0];
+    io_led[1] = gameUnit.temp_result_display[7:0];
     
   }
 }

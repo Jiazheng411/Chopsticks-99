@@ -5,6 +5,9 @@ global Reg {
   const PLAYER2_NUM2   = 4d3;  
   const TEMP_RESULT    = 4d4;
   const TEMP_COMPARE_RESULT = 4d5;
+  const ADD_FROM_VALUE = 4d6;
+  const ADD_TO_VALUE = 4d7;
+  const ADD_TO_WHICH_NUMBER = 4d8;
 }
 
 
@@ -23,10 +26,10 @@ module regFile (
     // for display
     output ioseg_val[8],   // 7-seg on mojo
     output iosel_val[4],   
-    output seven_seg_separate[4][7]  // 4 separate value of 7-seg display
+    output seven_seg_separate[4][7],  // 4 separate value of 7-seg display
     // for debug
-    // output temp_result_display[16],   
-    // output reg1[16]
+    output temp_result_display[16],   
+    output reg1[16]
   )
   
 {
@@ -49,6 +52,9 @@ module regFile (
       dff p2_number2[16](#INIT(b01));
       dff temp_result[16];
       dff temp_compare_result;
+      dff add_from_value[16](#INIT(0));
+      dff add_to_value[16](#INIT(0));
+      dff add_to_which_number[16](#INIT(0));
     }
   }
 
@@ -73,6 +79,9 @@ module regFile (
         Reg.PLAYER2_NUM2: p2_number2.d = writing_data;
         Reg.TEMP_RESULT: temp_result.d = writing_data;
         Reg.TEMP_COMPARE_RESULT: temp_compare_result.d = writing_data[0];
+        Reg.ADD_FROM_VALUE: add_from_value.d = writing_data;
+        Reg.ADD_TO_VALUE: add_to_value.d = writing_data;
+        Reg.ADD_TO_WHICH_NUMBER: add_to_which_number.d = writing_data;
       }
     
       
@@ -85,6 +94,9 @@ module regFile (
       Reg.PLAYER2_NUM2: a = p2_number2.q;
       Reg.TEMP_RESULT: a = temp_result.q;
       Reg.TEMP_COMPARE_RESULT: a = temp_compare_result.q;
+      Reg.ADD_FROM_VALUE: a = add_from_value.q;
+      Reg.ADD_TO_VALUE: a = add_to_value.q;
+      Reg.ADD_TO_WHICH_NUMBER: a = add_to_which_number.q;
       default: a = 0;
     }
     
@@ -96,11 +108,14 @@ module regFile (
       Reg.PLAYER2_NUM2: b = p2_number2.q;
       Reg.TEMP_RESULT: b = temp_result.q;
       Reg.TEMP_COMPARE_RESULT: b = temp_compare_result.q;
+      Reg.ADD_FROM_VALUE: b = add_to_value.q;
+      Reg.ADD_TO_VALUE: b = add_to_value.q;
+      Reg.ADD_TO_WHICH_NUMBER: b = add_to_which_number.q;
       default: b = 0;
     }
     
     // for debug
-    //temp_result_display = temp_result.q;
-    //reg1 = p1_number1.q;
+    temp_result_display = temp_result.q;
+    reg1 = p1_number1.q;
   }
 }

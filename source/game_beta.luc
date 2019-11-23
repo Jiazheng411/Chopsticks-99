@@ -16,14 +16,15 @@ module game_beta (
     output iosel_val[4],
     output who_is_playing[2],
     output who_wins[2],
-    output seven_seg_separate[4][7]
+    output seven_seg_separate[4][7],
     // for debug
-    //output temp_result_display[16],
-    //output reg1[16],
+    output temp_result_display[16],
+    output reg1[16]
     
   ) {
   alu game_alu;
   sig input_alu_b[16];
+  sig input_alu_a[16];
   .clk(clk){
 
     .rst(rst){
@@ -58,6 +59,15 @@ module game_beta (
     game_regfile.rb_address = game_fsm.regfile_rb_address;
     game_regfile.wa = game_fsm.regfile_writing_address;
     
+    
+    //asel mux
+    case(game_fsm.asel){
+      Asel.FROM_REGFILE : input_alu_a = game_regfile.a;
+      Asel.CONST_ONE : input_alu_a = 16d1;
+      Asel.CONST_TWO : input_alu_a = 16d2;
+      default: input_alu_a = 0;
+    }
+    
     //bsel mux
     case(game_fsm.bsel){
       Bsel.FROM_REGFILE : input_alu_b = game_regfile.b;
@@ -68,7 +78,7 @@ module game_beta (
     }
     
     //alu
-    game_alu.a = game_regfile.a;
+    game_alu.a = input_alu_a;
     game_alu.b = input_alu_b;
     game_alu.alufn = game_fsm.alufn;
     
@@ -82,8 +92,8 @@ module game_beta (
     game_fsm.who_go_first = who_go_first;
     
     // for debug
-    //temp_result_display = game_regfile.temp_result_display;
-    //reg1 = game_regfile.reg1;
+    temp_result_display = game_regfile.temp_result_display;
+    reg1 = game_regfile.reg1;
     
     
   }
