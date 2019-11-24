@@ -95,13 +95,12 @@ module mojo_top (
     io_sel = gameUnit.iosel_val;
     
     seven_seg_separate = ~gameUnit.seven_seg_separate;
-    io_led[2][7:1] = seven_seg_separate[0];
-    io_led[0][6:0] = seven_seg_separate[1];
-    led[7:1] = seven_seg_separate[2];
+    io_led[0][6:0] = seven_seg_separate[0];
+    io_led[0][7] = seven_seg_separate[2][0];
+    io_led[1][5:0] = seven_seg_separate[2][6:1];
     
-    io_led[0][7] = seven_seg_separate[3][6];
-    io_led[1][5:0] = seven_seg_separate[1][5:0];
- 
+    io_led[2][7:1] = seven_seg_separate[1];
+    led[7:1] = seven_seg_separate[3];
     
     io_led[1][7:6] = gameUnit.who_is_playing[0];
     io_led[2][0] = gameUnit.who_wins[0];
@@ -109,11 +108,12 @@ module mojo_top (
     
     who_go_first = io_dip[2][0];
     gameUnit.who_go_first = who_go_first;
+    
     // for debug
     //io_led[2] = gameUnit.reg1[7:0];
     //io_led[1] = gameUnit.temp_result_display[7:0];
-    io_led[0][1:0] = gameUnit.who_is_playing;
-    io_led[0][3:2] = gameUnit.who_wins;
+    //io_led[0][1:0] = gameUnit.who_is_playing;
+    //io_led[0][3:2] = gameUnit.who_wins;
     
   }
 }

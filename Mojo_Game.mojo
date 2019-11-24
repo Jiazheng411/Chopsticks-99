@@ -4,14 +4,14 @@
     <src>addSub.luc</src>
     <src>alu.luc</src>
     <src>regFile.luc</src>
-    <src>game_beta.luc</src>
     <src>shifter.luc</src>
+    <src>game_beta.luc</src>
     <src>seven_seg.luc</src>
     <src>cmp.luc</src>
     <src>multi_seg_separate_io.luc</src>
     <src>multi_seven_seg.luc</src>
-    <src top="true">mojo_top.luc</src>
     <src>boole.luc</src>
+    <src top="true">mojo_top.luc</src>
     <src>finateStateMachine.luc</src>
     <ucf lib="true">io_shield.ucf</ucf>
     <ucf lib="true">mojo.ucf</ucf>
