@@ -1,4 +1,5 @@
 // multi digits seven segment for 4 separate 7-seg displays, show numbers on 7-segment display
+
 module multi_seg_separate_io (    
     input values [4][4], // values to show
     output out[4][7]     // [4][7] array of 7-seg values, each sub array is 7-seg values for a number
@@ -10,6 +11,7 @@ module multi_seg_separate_io (
   seven_seg seg4;
 
   always {
+    // each input number corresponding to an array[7]
     seg1.char = values[0];
     seg2.char = values[1];
     seg3.char = values[2];

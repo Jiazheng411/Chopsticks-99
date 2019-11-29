@@ -1,10 +1,15 @@
 // fsm and control logic
+
+// constants
+
+// 3 asel values
 global Asel{
   const CONST_ONE = 2d1;
   const CONST_TWO = 2d2;
   const FROM_REGFILE = 2d3;
 }
 
+// 4 bsel values
 global Bsel{
   const CONST_ZERO = 2d0;
   const CONST_NINE = 2d1;
@@ -12,25 +17,22 @@ global Bsel{
   const FROM_REGFILE = 2d3;
 } 
 
-global GameProgress{
- const GAME_START = b00;
- const P1_PLAYING = b01;
- const P2_PLAYING = b10;
- const GAME_OVER = b11;
-}
-
+// current player
 global PersonPlyer{
  const NOONE = b00;
  const P1PLAYING = b01;
  const P2PLAYING = b10;
 }
 
+// current winner
 global PersonWin{
  const NOONE = b00;
  const P1WIN = b01;
  const P2WIN = b10;
 }
 
+
+// finateStateMachine and Control Unit 
 module finateStateMachine (
     input clk,  // clock
     input rst,  // reset
@@ -42,9 +44,11 @@ module finateStateMachine (
     input button6_pressed,
     input button7_pressed,
     input button8_pressed,
-    input who_go_first,     // value go goes first
-    input z_from_alu,       // z from alu
     
+    input who_go_first,     // value go goes first
+    input z_regfile_port_a,
+    
+    // control logic signals
     output alufn[6],
     output asel[2],
     output bsel[2],
@@ -52,6 +56,7 @@ module finateStateMachine (
     output regfile_rb_address[4],
     output regfile_we,
     output regfile_writing_address[4],
+    
     output which_player[2],  // which player is playing 
     output who_win[2]        // who wins the game
     
@@ -59,30 +64,43 @@ module finateStateMachine (
   .clk(clk){
     fsm game_fsm={
       START,
-      // P1's turn
-      P1_PLAY, 
-      P1_STORE_TO_FIRST_NUMBER_VALUE,
-      P1_STORE_ADD_TO_NUMBER1,
-      P1_STORE_TO_SECOND_NUMBER_VALUE,
-      P1_STORE_ADD_TO_NUMBER2,
-      P1_STORE_TO_WHICH_NUMBER,
-      P1_SCORE_ADDING,
-        // remainder 10
-      P1_CHECK_SCORE_LESS_THAN_10,
-      P1_CHECK_SCORE_BRANCH,
-      P1_SCORE_MINUS_10,
-      P1_DISPLAY_RESULT_CMP,
-      P1_DISPLAY_RESULT_BRANCH,
-      P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1,
-      P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2,
       
-        // check whether p1 wins
-      P1_CHECK_FIRST,
-      P1_CHECK_WIN_FIRST_STAGE,
-      P1_CHECK_SECOND,
-      P1_CHECK_WIN_SECOND_STAGE,
-      P1_CHANGE_WINNER,
-      // P2's turn
+      // P1's turn
+      
+      P1_PLAY,   // p1 make his/her choice by clicking button
+                 // store add_from_number to Reg.ADD_FROM_VALUE base on btn input
+      P1_STORE_TO_FIRST_NUMBER_VALUE,  // store p1's 1st number to Reg.ADD_TO_VALUE
+                                       // ADDC(Reg.PLAYER1_NUM1, 0 ,Reg.ADD_TO_VALUE)
+      P1_STORE_ADD_TO_NUMBER1,         // store 1 to Reg.ADD_TO_WHICH_NUMBER
+                                       // ADDC(1,0,Reg.ADD_TO_WHICH_NUMBER)
+      P1_STORE_TO_SECOND_NUMBER_VALUE, // store p1's 2nd number to Reg.ADD_TO_VALUE
+                                       // ADDC(Reg.PLAYER1_NUM2, 0 ,Reg.ADD_TO_VALUE)
+      P1_STORE_ADD_TO_NUMBER2,         // store 2 to Reg.ADD_TO_WHICH_NUMBER
+                                       // ADDC(2,0,Reg.ADD_TO_WHICH_NUMBER)
+      P1_SCORE_ADDING,                 // ADD(Reg.ADD_TO_VALUE, Reg.ADD_FROM_VALUE, Reg.TEMP_RESULT)
+      
+      // remainder 10
+      P1_CHECK_SCORE_LESS_THAN_10,     // CMPLTC(Reg.TEMP_RESULT, 10, Reg.TEMP_COMPARE_RESULT)
+      P1_CHECK_SCORE_BRANCH,           // branch according to Reg.TEMP_COMPARE_RESULT
+                                       // if z is true(Reg.TEMP_COMPARE_RESULT is 0), 
+                                          //branch to game_fsm.P1_SCORE_MINUS_10
+                                       // if z is false(Reg.TEMP_COMPARE_RESULT is 1), 
+                                          //branch to game_fsm.P1_DISPLAY_RESULT_CMP
+      P1_SCORE_MINUS_10,               // SUBC(Reg.TEMP_RESULT, 10, Reg.TEMP_RESULT)
+      
+      // save temperory result back to main registers
+      P1_DISPLAY_RESULT_CMP,           // CMPEQC(Reg.ADD_TO_WHICH_NUMBER, 1, Reg.TEMP_COMPARE_RESULT)
+      P1_DISPLAY_RESULT_BRANCH,        // branch according to Reg.TEMP_COMPARE_RESULT
+      P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1,     // ADDC(Reg.TEMP_RESULT, 0, Reg.PLAYER1_NUM1)
+      P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2,     // ADDC(Reg.TEMP_RESULT, 0, Reg.PLAYER1_NUM2)
+      
+      // check whether p1 wins
+      P1_CHECK_FIRST,               // CMPEQC(Reg.PLAYER1_NUM1, 9 ,Reg.TEMP_COMPARE_RESULT)
+      P1_CHECK_WIN_FIRST_STAGE,     // branch according to Reg.TEMP_COMPARE_RESULT
+      P1_CHECK_SECOND,              // CMPEQC(Reg.PLAYER1_NUM2, 9 ,Reg.TEMP_COMPARE_RESULT)
+      P1_CHECK_WIN_SECOND_STAGE,    // branch according to Reg.TEMP_COMPARE_RESULT
+      
+      // P2's turn, similar as p1's turn
       P2_PLAY, 
       P2_STORE_TO_FIRST_NUMBER_VALUE,
       P2_STORE_ADD_TO_NUMBER1,
@@ -103,6 +121,7 @@ module finateStateMachine (
       P2_CHECK_WIN_FIRST_STAGE,
       P2_CHECK_SECOND,
       P2_CHECK_WIN_SECOND_STAGE,
+      
       // end
       GAME_END_P1_WIN,
       GAME_END_P2_WIN
@@ -110,6 +129,7 @@ module finateStateMachine (
   }
 
   always {
+    //default values
     alufn = Alufn.ADD;
     asel = Asel.FROM_REGFILE;
     bsel = Bsel.FROM_REGFILE;
@@ -119,13 +139,17 @@ module finateStateMachine (
     regfile_rb_address = Reg.PLAYER2_NUM1;
     which_player = PersonPlyer.NOONE;
     who_win = PersonWin.NOONE;
+    
+    //reset to restart game
     if (rst){
         game_fsm.d = game_fsm.START;
     }
     else{
     
       case(game_fsm.q){
-      
+        
+        
+        // start game according to who_go_first
         game_fsm.START:
           if(who_go_first == 0){
             game_fsm.d = game_fsm.P1_PLAY;
@@ -133,7 +157,11 @@ module finateStateMachine (
           else{
             game_fsm.d = game_fsm.P2_PLAY;
           }
-          
+        
+        // p1's choice
+        // store corresponding number value to Reg.ADD_FROM_VALUE according to input 
+        // go to game_fsm.P1_STORE_TO_FIRST_NUMBER_VALUE if btn1/btn2 is 1
+        // go to game_fsm.P1_STORE_TO_SECOND_NUMBER_VALUE if btn3/btn4 is 1
         game_fsm.P1_PLAY:
           which_player = PersonPlyer.P1PLAYING;
           if(button1_pressed | button2_pressed | button3_pressed | button4_pressed){
@@ -157,13 +185,14 @@ module finateStateMachine (
               regfile_ra_address = Reg.PLAYER2_NUM2;
               game_fsm.d = game_fsm.P1_STORE_TO_SECOND_NUMBER_VALUE;
             }                         
-            //game_fsm.d = game_fsm.P1_SCORE_ADDING;
           }
+          // invalid input or no input
           else{
             game_fsm.d = game_fsm.P1_PLAY;
           }
           
-          
+        //ADDC(Reg.PLAYER1_NUM1, 0 ,Reg.ADD_TO_VALUE)
+        //go to game_fsm.P1_STORE_ADD_TO_NUMBER1
         game_fsm.P1_STORE_TO_FIRST_NUMBER_VALUE:
           which_player = PersonPlyer.P1PLAYING;
           alufn = Alufn.ADD;
@@ -173,6 +202,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_STORE_ADD_TO_NUMBER1;
         
+        //ADDC(1, 0 ,Reg.ADD_TO_WHICH_NUMBER)
+        // go to game_fsm.P1_SCORE_ADDING;
         game_fsm.P1_STORE_ADD_TO_NUMBER1:
           which_player = PersonPlyer.P1PLAYING;
           alufn = Alufn.ADD;
@@ -182,7 +213,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_SCORE_ADDING;
         
-          
+        //ADDC(Reg.PLAYER1_NUM2, 0 ,Reg.ADD_TO_VALUE)
+        //go to game_fsm.P1_STORE_ADD_TO_NUMBER2
         game_fsm.P1_STORE_TO_SECOND_NUMBER_VALUE:
           which_player = PersonPlyer.P1PLAYING;
           alufn = Alufn.ADD;
@@ -192,6 +224,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_STORE_ADD_TO_NUMBER2;
           
+       // ADDC(1,2,Reg.ADD_TO_WHICH_NUMBER)
+       // go to game_fsm.P1_SCORE_ADDING;
        game_fsm.P1_STORE_ADD_TO_NUMBER2:
           which_player = PersonPlyer.P1PLAYING;
           alufn = Alufn.ADD;
@@ -201,7 +235,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_SCORE_ADDING;
           
-          
+        //ADD(Reg.ADD_FROM_VALUE,Reg.ADD_TO_VALUE, Reg.TEMP_RESULT)
+        // go to game_fsm.P1_CHECK_SCORE_LESS_THAN_10
         game_fsm.P1_SCORE_ADDING:
           which_player = PersonPlyer.P1PLAYING;
           alufn = Alufn.ADD; // adding;
@@ -211,6 +246,9 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_CHECK_SCORE_LESS_THAN_10;
           
+          
+        // CMPLTC(Reg.TEMP_RESULT, 10, Reg.TEMP_COMPARE_RESULT)
+        // go to game_fsm.P1_CHECK_SCORE_BRANCH
         game_fsm.P1_CHECK_SCORE_LESS_THAN_10:
           which_player = PersonPlyer.P1PLAYING;
           alufn = Alufn.CMPLT;
@@ -220,20 +258,20 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_CHECK_SCORE_BRANCH;
           
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P1_SCORE_MINUS_10
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.P1_DISPLAY_RESULT_CMP
         game_fsm.P1_CHECK_SCORE_BRANCH:
           which_player = PersonPlyer.P1PLAYING;
-          bsel = Bsel.CONST_ZERO;
-          alufn = Alufn.ADD;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          if(!z_from_alu){
+          if(!z_regfile_port_a){
             game_fsm.d = game_fsm.P1_DISPLAY_RESULT_CMP;
           }
           else{
           game_fsm.d = game_fsm.P1_SCORE_MINUS_10;
           }
-          
 
-          
+        //SUBC(Reg.TEMP_RESULT, 10, Reg.TEMP_RESULT)
+        // go to game_fsm.P1_DISPLAY_RESULT_CMP
         game_fsm.P1_SCORE_MINUS_10:
           which_player = PersonPlyer.P1PLAYING;
           bsel = Bsel.CONST_TEN;
@@ -242,7 +280,9 @@ module finateStateMachine (
           regfile_ra_address = Reg.TEMP_RESULT;
           regfile_writing_address = Reg.TEMP_RESULT;
           game_fsm.d = game_fsm.P1_DISPLAY_RESULT_CMP;
-          
+        
+        //CMPEQC(Reg.ADD_TO_WHICH_NUMBER, 1, Reg.TEMP_COMPARE_RESULT)
+        //go to game_fsm.P1_DISPLAY_RESULT_BRANCH
         game_fsm.P1_DISPLAY_RESULT_CMP:
           which_player = PersonPlyer.P1PLAYING;
           alufn = Alufn.CMPEQ;
@@ -252,18 +292,20 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_DISPLAY_RESULT_BRANCH;
           
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1
         game_fsm.P1_DISPLAY_RESULT_BRANCH:
           which_player = PersonPlyer.P1PLAYING;
-          alufn = Alufn.ADD;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          bsel = Bsel.CONST_ZERO;
-          if(!z_from_alu){
+          if(!z_regfile_port_a){
             game_fsm.d = game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1;
           }
           else{
             game_fsm.d = game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2;
           }
           
+        //ADDC(Reg.TEMP_RESULT, 0, Reg.PLAYER1_NUM1)
+        //go to game_fsm.P1_CHECK_FIRST;
         game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1:
           which_player = PersonPlyer.P1PLAYING;
           regfile_ra_address = Reg.TEMP_RESULT;
@@ -272,6 +314,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P1_CHECK_FIRST;
           
+        //ADDC(Reg.TEMP_RESULT, 0, Reg.PLAYER1_NUM2)
+        //go to game_fsm.P1_CHECK_FIRST;
         game_fsm.P1_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2:
           which_player = PersonPlyer.P1PLAYING;
           regfile_ra_address = Reg.TEMP_RESULT;
@@ -281,8 +325,8 @@ module finateStateMachine (
           game_fsm.d = game_fsm.P1_CHECK_FIRST;
          
      
-          
-          
+       //CMPEQC(Reg.PLAYER1_NUM1, 9, Reg.TEMP_COMPARE_RESULT)
+       // go to game_fsm.P1_CHECK_WIN_FIRST_STAGE
        game_fsm.P1_CHECK_FIRST:
           which_player = PersonPlyer.P1PLAYING;
           bsel = Bsel.CONST_NINE;
@@ -292,19 +336,20 @@ module finateStateMachine (
           regfile_writing_address = Reg.TEMP_COMPARE_RESULT;
           game_fsm.d = game_fsm.P1_CHECK_WIN_FIRST_STAGE;
           
-          
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P2_PLAY
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.P1_CHECK_SECOND          
         game_fsm.P1_CHECK_WIN_FIRST_STAGE:
           which_player = PersonPlyer.P1PLAYING;
-          bsel = Bsel.CONST_ZERO;
-          alufn = Alufn.ADD;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          if (!z_from_alu){
+          if (!z_regfile_port_a){
             game_fsm.d = game_fsm.P1_CHECK_SECOND;
           }
           else{
             game_fsm.d = game_fsm.P2_PLAY;
           }
           
+        //CMPEQC(Reg.PLAYER1_NUM2, 9, Reg.TEMP_COMPARE_RESULT)
+        //go to game_fsm.P1_CHECK_WIN_SECOND_STAGE
         game_fsm.P1_CHECK_SECOND:
           bsel = Bsel.CONST_NINE;
           alufn = Alufn.CMPEQ; //COMEQ
@@ -313,18 +358,21 @@ module finateStateMachine (
           regfile_writing_address = Reg.TEMP_COMPARE_RESULT;
           game_fsm.d = game_fsm.P1_CHECK_WIN_SECOND_STAGE;
           
-          
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P2_PLAY
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.GAME_END_P1_WIN
         game_fsm.P1_CHECK_WIN_SECOND_STAGE:
-          bsel = Bsel.CONST_ZERO;
-          alufn = Alufn.ADD;
+          which_player = PersonPlyer.P1PLAYING;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          if (!z_from_alu){
+          if (!z_regfile_port_a){
             game_fsm.d = game_fsm.GAME_END_P1_WIN;
           }else{
             game_fsm.d = game_fsm.P2_PLAY;
           }
 
-          
+        // p2's choice
+        // store corresponding number value to Reg.ADD_FROM_VALUE according to input 
+        // go to game_fsm.P2_STORE_TO_FIRST_NUMBER_VALUE if btn5/btn6 is 1
+        // go to game_fsm.P2_STORE_TO_SECOND_NUMBER_VALUE if btn7/btn8 is 1
         game_fsm.P2_PLAY:
           which_player = PersonPlyer.P2PLAYING;
           if(button5_pressed | button6_pressed | button7_pressed | button8_pressed){
@@ -348,13 +396,13 @@ module finateStateMachine (
               regfile_ra_address = Reg.PLAYER1_NUM2;
               game_fsm.d = game_fsm.P2_STORE_TO_SECOND_NUMBER_VALUE;
             }                         
-            //game_fsm.d = game_fsm.P2_SCORE_ADDING;
           }
           else{
             game_fsm.d = game_fsm.P2_PLAY;
           }
           
-          
+        //ADDC(Reg.PLAYER2_NUM1, 0 ,Reg.ADD_TO_VALUE)
+        //go to game_fsm.P2_STORE_ADD_TO_NUMBER1
         game_fsm.P2_STORE_TO_FIRST_NUMBER_VALUE:
           which_player = PersonPlyer.P2PLAYING;
           alufn = Alufn.ADD;
@@ -364,6 +412,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_STORE_ADD_TO_NUMBER1;
         
+        //ADDC(1, 0 ,Reg.ADD_TO_WHICH_NUMBER)
+        // go to game_fsm.P2_SCORE_ADDING
         game_fsm.P2_STORE_ADD_TO_NUMBER1:
           which_player = PersonPlyer.P2PLAYING;
           alufn = Alufn.ADD;
@@ -373,7 +423,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_SCORE_ADDING;
         
-          
+        //ADDC(Reg.PLAYER2_NUM2, 0 ,Reg.ADD_TO_VALUE)
+        //go to game_fsm.P2_STORE_ADD_TO_NUMBER2 
         game_fsm.P2_STORE_TO_SECOND_NUMBER_VALUE:
           which_player = PersonPlyer.P2PLAYING;
           alufn = Alufn.ADD;
@@ -382,7 +433,9 @@ module finateStateMachine (
           regfile_writing_address = Reg.ADD_TO_VALUE;
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_STORE_ADD_TO_NUMBER2;
-          
+       
+       // ADDC(1,2,Reg.ADD_TO_WHICH_NUMBER)
+       // go to game_fsm.P2_SCORE_ADDING;
        game_fsm.P2_STORE_ADD_TO_NUMBER2:
           which_player = PersonPlyer.P2PLAYING;
           alufn = Alufn.ADD;
@@ -392,7 +445,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_SCORE_ADDING;
           
-          
+        //ADD(Reg.ADD_FROM_VALUE,Reg.ADD_TO_VALUE, Reg.TEMP_RESULT)
+        // go to game_fsm.P2_CHECK_SCORE_LESS_THAN_10
         game_fsm.P2_SCORE_ADDING:
           which_player = PersonPlyer.P2PLAYING;
           alufn = Alufn.ADD; // adding;
@@ -402,6 +456,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_CHECK_SCORE_LESS_THAN_10;
           
+        // CMPLTC(Reg.TEMP_RESULT, 10, Reg.TEMP_COMPARE_RESULT)
+        // go to game_fsm.P2_CHECK_SCORE_BRANCH
         game_fsm.P2_CHECK_SCORE_LESS_THAN_10:
           which_player = PersonPlyer.P2PLAYING;
           alufn = Alufn.CMPLT;
@@ -410,21 +466,21 @@ module finateStateMachine (
           regfile_writing_address = Reg.TEMP_COMPARE_RESULT;
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_CHECK_SCORE_BRANCH;
-          
+        
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P2_SCORE_MINUS_10
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.P2_DISPLAY_RESULT_CMP
         game_fsm.P2_CHECK_SCORE_BRANCH:
           which_player = PersonPlyer.P2PLAYING;
-          bsel = Bsel.CONST_ZERO;
-          alufn = Alufn.ADD;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          if(!z_from_alu){
+          if(!z_regfile_port_a){
             game_fsm.d = game_fsm.P2_DISPLAY_RESULT_CMP;
           }
           else{
           game_fsm.d = game_fsm.P2_SCORE_MINUS_10;
           }
           
-
-          
+        //SUBC(Reg.TEMP_RESULT, 10, Reg.TEMP_RESULT)
+        // go to game_fsm.P2_DISPLAY_RESULT_CMP
         game_fsm.P2_SCORE_MINUS_10:
           which_player = PersonPlyer.P2PLAYING;
           bsel = Bsel.CONST_TEN;
@@ -433,7 +489,9 @@ module finateStateMachine (
           regfile_ra_address = Reg.TEMP_RESULT;
           regfile_writing_address = Reg.TEMP_RESULT;
           game_fsm.d = game_fsm.P2_DISPLAY_RESULT_CMP;
-          
+        
+        //CMPEQC(Reg.ADD_TO_WHICH_NUMBER, 1, Reg.TEMP_COMPARE_RESULT)
+        //go to game_fsm.P2_DISPLAY_RESULT_BRANCH  
         game_fsm.P2_DISPLAY_RESULT_CMP:
           which_player = PersonPlyer.P2PLAYING;
           alufn = Alufn.CMPEQ;
@@ -443,18 +501,21 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_DISPLAY_RESULT_BRANCH;
           
+        
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1
         game_fsm.P2_DISPLAY_RESULT_BRANCH:
           which_player = PersonPlyer.P2PLAYING;
-          alufn = Alufn.ADD;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          bsel = Bsel.CONST_ZERO;
-          if(!z_from_alu){
+          if(!z_regfile_port_a){
             game_fsm.d = game_fsm.P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1;
           }
           else{
             game_fsm.d = game_fsm.P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2;
           }
           
+        //ADDC(Reg.TEMP_RESULT, 0, Reg.PLAYER2_NUM1)
+        //go to game_fsm.P2_CHECK_FIRST;
         game_fsm.P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER1:
           which_player = PersonPlyer.P2PLAYING;
           regfile_ra_address = Reg.TEMP_RESULT;
@@ -463,6 +524,8 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_CHECK_FIRST;
           
+        //ADDC(Reg.TEMP_RESULT, 0, Reg.PLAYER2_NUM2)
+        //go to game_fsm.P2_CHECK_FIRST;
         game_fsm.P2_DISPLAY_RESULT_ADD_BACK_TO_NUMBER2:
           which_player = PersonPlyer.P2PLAYING;
           regfile_ra_address = Reg.TEMP_RESULT;
@@ -471,7 +534,9 @@ module finateStateMachine (
           regfile_we = 1;
           game_fsm.d = game_fsm.P2_CHECK_FIRST;
           
-        game_fsm.P2_CHECK_FIRST:
+        //CMPEQC(Reg.PLAYER2_NUM1, 9, Reg.TEMP_COMPARE_RESULT)
+       // go to game_fsm.P2_CHECK_WIN_FIRST_STAGE
+       game_fsm.P2_CHECK_FIRST:
           which_player = PersonPlyer.P2PLAYING;
           bsel = Bsel.CONST_NINE;
           alufn = Alufn.CMPEQ; //COMEQ
@@ -480,18 +545,20 @@ module finateStateMachine (
           regfile_writing_address = Reg.TEMP_COMPARE_RESULT;
           game_fsm.d = game_fsm.P2_CHECK_WIN_FIRST_STAGE;
           
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P2_PLAY
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.P2_CHECK_SECOND          
         game_fsm.P2_CHECK_WIN_FIRST_STAGE:
           which_player = PersonPlyer.P2PLAYING;
-          alufn = Alufn.ADD;
-          bsel = Bsel.CONST_ZERO;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          if (!z_from_alu){
+          if (!z_regfile_port_a){
             game_fsm.d = game_fsm.P2_CHECK_SECOND;
           }
           else{
             game_fsm.d = game_fsm.P1_PLAY;
           }
           
+        //CMPEQC(Reg.PLAYER2_NUM2, 9, Reg.TEMP_COMPARE_RESULT)
+        //go to game_fsm.P2_CHECK_WIN_SECOND_STAGE
         game_fsm.P2_CHECK_SECOND:
           which_player = PersonPlyer.P2PLAYING;
           bsel = Bsel.CONST_NINE;
@@ -501,22 +568,23 @@ module finateStateMachine (
           regfile_writing_address = Reg.TEMP_COMPARE_RESULT;
           game_fsm.d = game_fsm.P2_CHECK_WIN_SECOND_STAGE;
           
-          
+        //if Reg.TEMP_COMPARE_RESULT = 0, z = 1: go to game_fsm.P2_PLAY
+        //if Reg.TEMP_COMPARE_RESULT = 1, z = 0: go to game_fsm.GAME_END_P2_WIN
         game_fsm.P2_CHECK_WIN_SECOND_STAGE:
           which_player = PersonPlyer.P2PLAYING;
-          bsel = Bsel.CONST_ZERO;
-          alufn = Alufn.ADD;
           regfile_ra_address = Reg.TEMP_COMPARE_RESULT;
-          if (!z_from_alu){
+          if (!z_regfile_port_a){
             game_fsm.d = game_fsm.GAME_END_P2_WIN;
           }else{
             game_fsm.d = game_fsm.P1_PLAY;
           }
-          
+        
+        //P1 win, game end, stay in this state unless rst
         game_fsm.GAME_END_P1_WIN:
           who_win = PersonWin.P1WIN;
           game_fsm.d = game_fsm.GAME_END_P1_WIN; 
             
+        //P2 win, game end, stay in this state unless rst
         game_fsm.GAME_END_P2_WIN:
           who_win = PersonWin.P2WIN;
           game_fsm.d = game_fsm.GAME_END_P2_WIN;  

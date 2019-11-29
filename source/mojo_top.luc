@@ -1,3 +1,5 @@
+// mojo top, connects game input/output and game beta together
+
 module mojo_top (
     input clk,              // 50MHz clock
     input rst_n,            // reset button (active low)
@@ -63,7 +65,7 @@ module mojo_top (
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
     
-    
+    // game button inputs
     btn_cond_1.in=io_dip[1][4]; //to reduce the bouncing effects of your button 
     btn_cond_2.in=io_dip[1][5];
     btn_cond_3.in=io_dip[1][6];
@@ -72,6 +74,7 @@ module mojo_top (
     btn_cond_6.in=io_dip[1][1];
     btn_cond_7.in=io_dip[1][2];
     btn_cond_8.in=io_dip[1][3];
+    
     edge_dt_btn_1.in=btn_cond_1.out; //get the edge of button press
     edge_dt_btn_2.in=btn_cond_2.out;
     edge_dt_btn_3.in=btn_cond_3.out;
@@ -90,22 +93,25 @@ module mojo_top (
     gameUnit.button_7_pressed = edge_dt_btn_7.out;
     gameUnit.button_8_pressed = edge_dt_btn_8.out;
     
-    
+    // mojo io-shield 7-seg display, for debug
     io_seg = gameUnit.ioseg_val;
     io_sel = gameUnit.iosel_val;
     
+    // game 7-segment display
     seven_seg_separate = ~gameUnit.seven_seg_separate;
     io_led[0][6:0] = seven_seg_separate[0];
     io_led[0][7] = seven_seg_separate[2][0];
     io_led[1][5:0] = seven_seg_separate[2][6:1];
-    
+   
     io_led[2][7:1] = seven_seg_separate[1];
     led[7:1] = seven_seg_separate[3];
     
+    // game current player and game winner display
     io_led[1][7:6] = gameUnit.who_is_playing[0];
     io_led[2][0] = gameUnit.who_wins[0];
     led[0] = gameUnit.who_wins[1];
     
+    // input: who should go first 
     who_go_first = io_dip[2][0];
     gameUnit.who_go_first = who_go_first;
     

@@ -1,3 +1,6 @@
+// regfile, registers to store values
+
+// constants
 global Reg {
   const PLAYER1_NUM1   = 4d0;
   const PLAYER1_NUM2   = 4d1;  
@@ -27,6 +30,7 @@ module regFile (
     output ioseg_val[8],   // 7-seg on mojo
     output iosel_val[4],   
     output seven_seg_separate[4][7],  // 4 separate value of 7-seg display
+    
     //current players and winner
     // for debug
     output temp_result_display[16],   
@@ -42,7 +46,7 @@ module regFile (
   .clk(clk){
     .rst(rst){
     
-      // declare seven_seg display
+      // declare seven_seg on mojo shield for display and debug
       multi_seven_seg seg;
       
       // registers in regfiles 
@@ -51,10 +55,18 @@ module regFile (
       dff p1_number2[16](#INIT(b01));
       dff p2_number1[16](#INIT(b01));
       dff p2_number2[16](#INIT(b01));
+      
+      // store temparory result
       dff temp_result[16];
+      
+      // store temparory compare result
       dff temp_compare_result;
+      
+      // add from/ to number value
       dff add_from_value[16](#INIT(0));
       dff add_to_value[16](#INIT(0));
+      
+      // add to number index
       dff add_to_which_number[16](#INIT(0));
     }
   }
@@ -62,6 +74,7 @@ module regFile (
 
   always {
   
+  // 7-seg displays, display player's 4 numbers values
   // 7-seg displays on mojo
   seg.values = {p1_number1.q[3:0], p1_number2.q[3:0], p2_number1.q[3:0], p2_number2.q[3:0]};
   iosel_val = ~seg.sel;
@@ -69,7 +82,6 @@ module regFile (
   // 7-seg displays of game 
   seg_sep.values = {p1_number1.q[3:0], p1_number2.q[3:0], p2_number1.q[3:0], p2_number2.q[3:0]};
   seven_seg_separate = seg_sep.out;
-    
     
 
   // write to regfile according to wrting data and writing address if we is 1
@@ -84,10 +96,9 @@ module regFile (
         Reg.ADD_FROM_VALUE: add_from_value.d = writing_data;
         Reg.ADD_TO_VALUE: add_to_value.d = writing_data;
         Reg.ADD_TO_WHICH_NUMBER: add_to_which_number.d = writing_data;
-      }
-    
-      
+      } 
     }
+    
   // get value a according to ra_address
   case(ra_address){
       Reg.PLAYER1_NUM1: a = p1_number1.q;

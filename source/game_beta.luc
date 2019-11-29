@@ -1,3 +1,5 @@
+// game beta, connects alu, cu, regfile together
+
 module game_beta (
     input clk,  // clock
     input rst,  // reset
@@ -10,39 +12,51 @@ module game_beta (
     input button_6_pressed,
     input button_7_pressed,
     input button_8_pressed,
+    
+    // who should go first input 
     input who_go_first,
     
+    // 7-seg display 
     output ioseg_val[8],
     output iosel_val[4],
+    output seven_seg_separate[4][7],
+    
+    // current player and winner
     output who_is_playing[2],
-    output who_wins[2],
-    output seven_seg_separate[4][7]
+    output who_wins[2]
+    
     // for debug
     //output temp_result_display[16],
     //output reg1[16],
     
   ) {
+  // declare alu
   alu game_alu;
+  
+  // decalare 16 bits input variabled to alu
   sig input_alu_b[16];
   sig input_alu_a[16];
+  sig z_regfile_port_a;
+  
   .clk(clk){
 
     .rst(rst){
+      // declare fsm and regfile
       finateStateMachine game_fsm;
       regFile game_regfile;
     }
   }
   always {
-    //
+    // 7-seg display for mojo io-sheild, get from regfile
     iosel_val = game_regfile.iosel_val;
     ioseg_val = game_regfile.ioseg_val;
+    // 7-seg display for game, get from regfile
     seven_seg_separate = game_regfile.seven_seg_separate;
     
-    // 
+    // current player and current winner, get from fsm
     who_is_playing = game_fsm.which_player;
     who_wins = game_fsm.who_win;
     
-  
     //pass button press signal to CU unit
     game_fsm.button1_pressed = button_1_pressed;
     game_fsm.button2_pressed = button_2_pressed;
@@ -53,41 +67,41 @@ module game_beta (
     game_fsm.button7_pressed = button_7_pressed;
     game_fsm.button8_pressed = button_8_pressed;
     
-    //Setup REGFILE unit 
+    // other inputs to CU unit
+    z_regfile_port_a = (game_regfile.a == 0);
+    game_fsm.z_regfile_port_a = z_regfile_port_a;
+    game_fsm.who_go_first = who_go_first;
+    
+    //Setup REGFILE unit
+    //input from CU  
     game_regfile.we = game_fsm.regfile_we;
     game_regfile.ra_address = game_fsm.regfile_ra_address;
     game_regfile.rb_address = game_fsm.regfile_rb_address;
     game_regfile.wa = game_fsm.regfile_writing_address;
+    //input from ALU
+    game_regfile.writing_data = game_alu.out;
     
+    //asel mux, select input a pass to alu
     case(game_fsm.asel){
-      Asel.FROM_REGFILE:input_alu_a = game_regfile.a;
-      Asel.CONST_ONE: input_alu_a = 16d1;
-      Asel.CONST_TWO: input_alu_a = 16d2;
+      Asel.FROM_REGFILE:input_alu_a = game_regfile.a;   // from alu
+      Asel.CONST_ONE: input_alu_a = 16d1;      // constant 1
+      Asel.CONST_TWO: input_alu_a = 16d2;      // constant 2
       default: input_alu_a = 0;
     }
     
-    //bsel mux
+    //bsel mux, select input b pass to alu
     case(game_fsm.bsel){
-      Bsel.FROM_REGFILE : input_alu_b = game_regfile.b;
-      Bsel.CONST_NINE : input_alu_b = 16d9;
-      Bsel.CONST_ZERO : input_alu_b = 16d0;
-      Bsel.CONST_TEN: input_alu_b = 16d10;
-      default: input_alu_b = 0;
+      Bsel.FROM_REGFILE : input_alu_b = game_regfile.b; //from alu
+      Bsel.CONST_NINE : input_alu_b = 16d9; // constant 9
+      Bsel.CONST_ZERO : input_alu_b = 16d0; // constant 0
+      Bsel.CONST_TEN: input_alu_b = 16d10;  // constant 10
+      default: input_alu_b = 0;  
     }
     
-    //alu
+    //alu inputs
     game_alu.a = input_alu_a;
     game_alu.b = input_alu_b;
     game_alu.alufn = game_fsm.alufn;
-    
-    //
-    game_regfile.writing_data = game_alu.out;
-    
-    // 
-    game_fsm.z_from_alu = game_alu.z;
-    
-    //
-    game_fsm.who_go_first = who_go_first;
     
     // for debug
     //temp_result_display = game_regfile.temp_result_display;
