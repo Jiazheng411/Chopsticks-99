@@ -1,4 +1,4 @@
-# ReachingDouble9
+# Chopsticks·99
 an electronic game inspired by childhood hand game Chopsticks implemented using Mojo FPGA
 
 ## Rules:
