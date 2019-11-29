@@ -1,7 +1,7 @@
 # ReachingDouble9
 an electronic game inspired by childhood hand game Chopsticks implemented using Mojo FPGA
 
-# # Rules:
+## Rules:
 1. Each player has a yellow and a white number with same shape starting from 1.
 2. Players take turns to choose one of the opponent’s numbers to add to one of his or her own
 numbers as stated in the instruction example above.
